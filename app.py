@@ -19,7 +19,7 @@ app = Flask(__name__)
 # --- Configuration ---
 NEWS_API_KEY = os.environ.get('NEWS_API_KEY')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # Centralized, from .env
-FMP_API_KEY = "os.environ.get('FMP_API_KEY')"      # From .env
+FMP_API_KEY = os.environ.get('FMP_API_KEY')    
 
 GEMINI_API_URL = 'https://generativelanguage.googleapis.com' # From original
 DEFAULT_COUNTRY = 'us'
@@ -706,4 +706,4 @@ def analyze_product_image_route():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5009) # Using original port
+    app.run(debug=True, host='0.0.0.0', port=5007) # Using original port
