@@ -25,15 +25,4 @@
 - Set your preferred local country.
 - Customize global keyword filters.
 
-## 📸 Screenshots
 
-| Local News | Company Insights | Settings | Chatbot |
-|------------|------------------|----------|---------|
-| ![Local](./static/screenshots/local.png) | ![Insights](./static/screenshots/insights.png) | ![Settings](./static/screenshots/settings.png) | ![Chatbot](./static/screenshots/chatbot.png) |
-
-## 🛠️ Installation
-
-### 1. Clone the repo
-```bash
-git clone https://github.com/yourusername/youth-economy-navigator.git
-cd youth-economy-navigator
