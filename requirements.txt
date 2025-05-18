@@ -2,5 +2,3 @@ Flask
 requests
 google-generativeai
 python-dotenv
-newspaper3k
-lxml[html_clean]

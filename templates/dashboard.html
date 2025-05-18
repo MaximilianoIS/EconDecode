@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EconDecoder</title>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <!-- Custom Styles -->
+  <style>
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: radial-gradient(circle at 30% 50%, #f8f9fa 0%, #d6d9d6 40%, #b5c1b3 70%, #d8b8a0 100%);
+      min-height: 100vh;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #1e1e1e; /* text-gray-800 default, will be overridden by class on body tag */
+    }
+
+    /* .dark body color rule removed as dark:text-gray-200 is directly on body tag */
+
+    .glass-card { 
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .dark .glass-card {
+        background: rgba(31, 41, 55, 0.6); 
+        border-color: rgba(75, 85, 99, 0.4); 
+    }
+
+    .glass-card.chatbot-container {
+      display: flex;
+      flex-direction: column;
+      background: rgba(240, 248, 255, 0.75); 
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(200, 220, 255, 0.4);
+    }
+    .dark .glass-card.chatbot-container {
+        background: rgba(55, 65, 81, 0.7); 
+        border-color: rgba(75, 85, 99, 0.5);
+    }
+
+    .chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: transparent;
+    }
+
+    .chat-input-area {
+      padding: 0.75rem 1rem; 
+      border-top: 1px solid #e5e7eb; 
+      display: flex;
+      gap: 0.5rem;
+      background-color: white; 
+    }
+    .dark .chat-input-area {
+        border-top-color: #4b5563; 
+        background-color: #1f2937; 
+    }
+
+    .user-message, .bot-message {
+      max-width: 85%;
+      word-wrap: break-word;
+      font-size: 0.9rem; 
+    }
+     @media (min-width: 640px) { 
+        .user-message, .bot-message {
+            font-size: 0.95rem;
+        }
+    }
+
+    .user-message {
+      background-color: #dbeafe; 
+      color: #1e3a8a; 
+      padding: 0.6rem 0.9rem; 
+      border-radius: 1.25rem; 
+      border-bottom-right-radius: 0.375rem;
+      align-self: flex-end;
+    }
+    .dark .user-message {
+        background-color: #1e40af; 
+        color: #dbeafe; 
+    }
+
+    .bot-message {
+      background-color: #e5e7eb; 
+      color: #374151; 
+      padding: 0.6rem 0.9rem; 
+      border-radius: 1.25rem; 
+      border-bottom-left-radius: 0.375rem;
+      align-self: flex-start;
+    }
+    .dark .bot-message {
+        background-color: #4b5563; 
+        color: #e5e7eb; 
+    }
+
+    .tab-underline-blue { 
+      position: relative;
+    }
+    .tab-underline-blue::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 100%;
+      height: 3px;
+      background-color: #3b82f6; 
+      border-radius: 9999px;
+    }
+    .dark .tab-underline-blue::after {
+        background-color: #60a5fa; 
+    }
+
+    .hidden { display: none !important; }
+
+    .glass-card-base { 
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 1.5rem; 
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+    .dark .glass-card-base {
+        background: rgba(31, 41, 55, 0.65); 
+        border-color: rgba(75, 85, 99, 0.45); 
+    }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.25); border-radius: 3px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.25); }
+    .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.25) rgba(255, 255, 255, 0.1); }
+    .dark .custom-scrollbar { scrollbar-color: rgba(255, 255, 255, 0.25) rgba(0, 0, 0, 0.1); }
+
+    .company-logo { width: 40px; height: 40px; padding: 2px; }
+    @media (min-width: 640px) { .company-logo { width: 48px; height: 48px; padding: 4px; } }
+
+    .recommendation-slider-container { margin-top: 0.75rem; padding: 0.75rem 1rem 1rem; border-radius: 0.75rem; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(0, 0, 0, 0.05); }
+    .dark .recommendation-slider-container { background: rgba(55, 65, 81, 0.4); border-color: rgba(255, 255, 255, 0.05); }
+    .recommendation-text { font-size: 0.875rem; font-weight: 600; }
+    .slider-track-wrapper { position: relative; height: 1rem; }
+    .slider-track { height: 0.5rem; width: 100%; border-radius: 9999px; background: linear-gradient(to right, #10b981, #fbbf24, #ef4444); opacity: 0.85; }
+    .slider-thumb { width: 1.25rem; height: 1.25rem; border-radius: 9999px; background-color: white; border: 2px solid rgba(107, 114, 128, 0.8); transition: left 0.3s ease-out; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+
+    #mobile-menu button.active-mobile-tab { background-color: #e0e7ff; color: #3730a3; }
+    .dark #mobile-menu button.active-mobile-tab { background-color: #374151; color: #a5b4fc; }
+
+    /* Chat Bubble Styles */
+    #chat-bubble {
+        background-color: #2563eb; /* bg-blue-600 */
+        color: white;
+        border-radius: 50%;
+        width: 56px; /* w-14 */
+        height: 56px; /* h-14 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+        z-index: 1000; /* Ensure it's above most content */
+    }
+    #chat-bubble:hover {
+        transform: scale(1.1);
+    }
+    .dark #chat-bubble {
+        background-color: #3b82f6; /* bg-blue-500 */
+    }
+    /* Chat panel when opened from bubble */
+    /* Chat panel when opened from bubble */
+    .chat-panel-mobile-fixed {
+        display: flex; /* ADD THIS LINE */
+        flex-direction: column; /* ADD THIS LINE */
+        position: fixed; /* Ensure it's fixed for mobile overlay */
+        bottom: 1rem;   /* Adjust as needed */
+        left: 1rem;
+        right: 1rem;
+        width: auto; /* Override fixed width if it was calc(100% - 2rem) */
+        max-width: 400px; /* Max width for the panel */
+        margin-left: auto; /* Center if max-width is applied */
+        margin-right: auto; /* Center if max-width is applied */
+        height: 70vh;
+        max-height: 550px; 
+        z-index: 1010; /* Above the bubble */
+        /* Note: It will inherit background, border, etc., from .glass-card.chatbot-container when JS applies classes */
+    }
+
+      @media (min-width: 1024px) {
+    .company-profile-card {
+      backdrop-filter: blur(18px) !important;
+      border: 1px solid rgba(200, 200, 200, 0.4) !important;
+      border-radius: 1.75rem !important;
+      padding: 0.5rem !important;
+      width: 360px;
+      height: 470px;
+    }
+
+    .company-profile-card .recommendation-slider-container {
+      background: rgba(255, 255, 255, 0.6) !important;
+      padding: 1rem 1.25rem 1.25rem !important;
+      border: 1px solid rgba(180, 180, 180, 0.3) !important;
+    }
+
+    .company-profile-card h3 {
+      font-size: 1.25rem !important;
+    }
+
+    .company-profile-card .slider-track {
+      height: 0.6rem !important;
+    }
+
+    .company-profile-card .slider-thumb {
+      width: 1.5rem !important;
+      height: 1.5rem !important;
+    }
+  }
+
+  @media (min-width:1024px){
+  /* add a sliver of space between the header and first message */
+  #chat-messages-container{ padding-top: .25rem; }
+}
+
+
+  </style>
+
+  <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+  <script src="/static/insights.js" defer></script> 
+</head>
+<body class="text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+
+  <!-- Top Navigation -->
+  <div class="w-full px-4 sm:px-6 py-3 backdrop-blur-md bg-white/40 dark:bg-gray-800/40 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex flex-wrap justify-between items-center">
+      <div class="text-lg font-bold text-gray-900 dark:text-gray-100 shrink-0 mr-4">EconDecode</div>
+  
+      <div class="w-full md:w-auto md:flex-1 order-3 md:order-2 mt-3 md:mt-0 md:mx-4">
+        <input id="news-search-input" type="text" placeholder="Search News Articles" class="w-full px-4 py-2 rounded-lg bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-800 dark:text-gray-100">
+      </div>
+  
+      <div class="md:hidden order-2 md:order-3"> 
+        <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu" aria-expanded="false">
+          <span class="sr-only">Open main menu</span>
+          <svg id="hamburger-icon" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <svg id="close-icon" class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+  
+      <div id="desktop-nav-container" class="hidden md:flex items-center space-x-2 sm:space-x-3 order-2 md:order-3"> 
+        <button id="local-tab" class="px-2 py-1 sm:px-3 text-sm sm:text-base font-medium focus:outline-none text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white tab-underline-blue">Local</button>
+        <button id="global-tab" class="px-2 py-1 sm:px-3 text-sm sm:text-base font-medium focus:outline-none text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white">Global</button>
+        <button id="insights-tab" class="px-2 py-1 sm:px-3 text-sm sm:text-base font-medium focus:outline-none text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white">Insights</button>
+        <button id="settings-tab" class="px-2 py-1 sm:px-3 text-sm sm:text-base font-medium focus:outline-none text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white">Settings</button>
+        <button id="login-button" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-md">Log in</button>
+      </div>
+    </div>
+  
+    <div id="mobile-menu" class="hidden md:hidden mt-2"> 
+      <div class="px-2 pt-2 pb-3 space-y-1 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+        <button id="mobile-local-tab" data-target-tab="local-tab" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700">Local</button>
+        <button id="mobile-global-tab" data-target-tab="global-tab" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700">Global</button>
+        <button id="mobile-insights-tab" data-target-tab="insights-tab" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700">Insights</button>
+        <button id="mobile-settings-tab" data-target-tab="settings-tab" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700">Settings</button>
+        <button id="mobile-login-button" data-target-tab="login-button" class="block w-full text-left mt-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600 pt-3">Log in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page Content -->
+  <div class="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
+
+      <!-- Left/Main Section (News + Settings + Insights) -->
+      <div class="lg:col-span-2">
+        
+        <h2 id="main-section-title" class="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Local News</h2>
+
+        <div id="news-loading-indicator" class="text-center py-8 text-blue-600 dark:text-blue-400 ">
+          <svg class="animate-spin h-8 w-8 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <p class="mt-2 text-sm sm:text-base">Loading news...</p>
+        </div>
+
+        <div id="news-error-display" class="bg-red-100 dark:bg-red-700/30 border border-red-400 dark:border-red-500/50 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4 hidden" role="alert">
+          <strong class="font-bold">Error:</strong>
+          <span id="news-error-text" class="text-sm sm:text-base"></span>
+        </div>
+
+        <div id="local-news-section" class="max-w-full">
+          <div id="local-news-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"></div>
+          <div class="text-center mt-6 mb-4">
+            <button id="load-more-local" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-150 ease-in-out disabled:opacity-50 text-sm sm:text-base" style="display: none;">
+              Load More Local News
+            </button>
+          </div>
+        </div>
+
+        <div id="global-news-section" class="max-w-full ">
+          <div id="global-news-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"></div>
+          <div class="text-center mt-6 mb-4">
+            <button id="load-more-global" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-150 ease-in-out disabled:opacity-50 text-sm sm:text-base" style="display: none;">
+              Load More Global News
+            </button>
+          </div>
+        </div>
+        
+        <div id="settings-section" class="glass-card p-4 sm:p-6 mt-6 ">
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 border-b dark:border-gray-700 pb-3">Settings</h3>
+            <div class="mb-6">
+                <label for="theme-toggle" class="block text-sm sm:text-md font-medium text-gray-800 dark:text-gray-200 mb-2">Appearance</label>
+                <div class="flex items-center">
+                <span class="mr-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">Light</span>
+                <button id="theme-toggle-button" type="button" class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-gray-300" role="switch" aria-checked="false">
+                    <span class="sr-only">Use dark mode</span>
+                    <span id="theme-toggle-indicator" aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200 translate-x-0"></span>
+                </button>
+                <span class="ml-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">Dark</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Toggle between light and dark themes.</p>
+            </div>
+            <div class="mb-6">
+                <label for="country-override" class="block text-sm sm:text-md font-medium text-gray-800 dark:text-gray-200 mb-1">Local News Country</label>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Detected: <span id="settings-detected-country" class="font-medium">Loading...</span>. Override below.
+                </p>
+                <select id="country-override-select" name="country-override" class="mt-1 block w-full pl-3 pr-10 py-2 text-sm sm:text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-white dark:bg-gray-700 bg-opacity-80 dark:bg-opacity-80 text-gray-800 dark:text-gray-200">
+                    <option value="">Use Auto-Detected Country</option>
+                    <option value="ae">United Arab Emirates</option><option value="ar">Argentina</option><option value="at">Austria</option><option value="au">Australia</option><option value="be">Belgium</option><option value="bg">Bulgaria</option><option value="br">Brazil</option><option value="ca">Canada</option><option value="ch">Switzerland</option><option value="cn">China</option><option value="co">Colombia</option><option value="cu">Cuba</option><option value="cz">Czech Republic</option><option value="de">Germany</option><option value="eg">Egypt</option><option value="fr">France</option><option value="gb">United Kingdom</option><option value="gr">Greece</option><option value="hk">Hong Kong</option><option value="hu">Hungary</option><option value="id">Indonesia</option><option value="ie">Ireland</option><option value="il">Israel</option><option value="in">India</option><option value="it">Italy</option><option value="jp">Japan</option><option value="kr">South Korea</option><option value="lt">Lithuania</option><option value="lv">Latvia</option><option value="ma">Morocco</option><option value="mx">Mexico</option><option value="my">Malaysia</option><option value="ng">Nigeria</option><option value="nl">Netherlands</option><option value="no">Norway</option><option value="nz">New Zealand</option><option value="ph">Philippines</option><option value="pl">Poland</option><option value="pt">Portugal</option><option value="ro">Romania</option><option value="rs">Serbia</option><option value="ru">Russia</option><option value="sa">Saudi Arabia</option><option value="se">Sweden</option><option value="sg">Singapore</option><option value="si">Slovenia</option><option value="sk">Slovakia</option><option value="th">Thailand</option><option value="tr">Turkey</option><option value="tw">Taiwan</option><option value="ua">Ukraine</option><option value="us">United States</option><option value="ve">Venezuela</option><option value="za">South Africa</option>
+                </select>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Select a country for local economic news.</p>
+            </div>
+            <div class="mb-6">
+                <label for="global-keywords" class="block text-sm sm:text-md font-medium text-gray-800 dark:text-gray-200 mb-2">Global News Keywords</label>
+                <input type="text" name="global-keywords" id="global-keywords-input" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 bg-opacity-80 dark:bg-opacity-80 text-gray-800 dark:text-gray-100" placeholder="e.g., inflation, startups, cryptocurrency">
+                <button id="save-global-keywords-button" class="mt-2 px-4 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Save Keywords</button>
+                <div id="current-global-keywords-display" class="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300"></div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Comma-separated keywords to refine global news.</p>
+            </div>
+            <div class="mt-8 border-t dark:border-gray-700 pt-4">
+                <button id="reset-settings-button" class="px-4 py-2 border border-red-300 dark:border-red-500/70 text-xs sm:text-sm font-medium rounded-md text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-700/30 hover:bg-red-100 dark:hover:bg-red-600/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Reset All Settings</button>
+            </div>
+        </div>
+
+        <div id="insights-content-section" >
+            <section id="insights-section" class="space-y-8 sm:space-y-12 max-w-full xl:max-w-7xl mx-auto">
+                <div class="glass-card-base p-4 sm:p-6 md:p-8 dark:text-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                        <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2 sm:mb-0">Watched Companies</h2>
+                        <button id="edit-watched-list-btn"
+                                class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg bg-gray-600 dark:bg-gray-500 text-white hover:bg-gray-700 dark:hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors">
+                           Edit
+                        </button>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 text-xs sm:text-sm">Your personalized company watchlist. Scroll sideways!</p>
+                    <div id="watched-companies-container" class="overflow-x-auto pb-4 custom-scrollbar -mx-1">
+                        <div id="watched-companies-list" class="flex space-x-4 sm:space-x-6 px-1 py-1">
+                        </div>
+                    </div>
+                    <div id="watched-companies-loader" class="text-center py-10 hidden">
+                        <svg class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <div id="watched-companies-error" class="bg-red-100 dark:bg-red-700/30 border border-red-400 dark:border-red-500/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-xs sm:text-sm hidden"></div>
+                </div>
+      
+                <div class="glass-card-base p-4 sm:p-6 md:p-8 dark:text-gray-200">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Product Analyzer</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6 sm:mb-8 text-xs sm:text-sm">Discover the company behind a product.</p>
+      
+                    <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-6">
+                        <input type="file" id="product-image-gallery" accept="image/*" class="hidden">
+                        <label for="product-image-gallery"
+                               class="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 cursor-pointer transition-colors">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10zm-9.414-5.414a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L10 7.414l-2.414 2.414zM15 11a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
+                              </svg>
+                            <span>From Gallery</span>
+                        </label>
+                        <button id="start-camera-btn-modal"
+                                class="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 cursor-pointer transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                <path d="M2 6a2 2 0 012-2h1.586A2 2 0 017.001 3.414L7.586 4H10a2 2 0 012 2v3.586l1.415-1.414A2 2 0 0115.536 8H18a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm5-2.586L6.586 4H4v8h12V6h-2.414l-.585-.586A2 2 0 0012.586 5H10V3.414A.5.5 0 0110.5 3H12a1 1 0 00.707-.293L13 2.414V2.414A2 2 0 0010.586 2H7z" />
+                                <path fill-rule="evenodd" d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 1.5a4 4 0 100-8 4 4 0 000 8z" clip-rule="evenodd" />
+                            </svg>
+                            Use Camera
+                        </button>
+                    </div>
+      
+                    <div id="product-image-preview-container" class="mb-6 text-center bg-gray-400/10 dark:bg-gray-700/20 p-3 sm:p-4 rounded-xl border border-dashed border-gray-300/40 dark:border-gray-600/40 hidden">
+                        <img id="product-image-preview" src="#" alt="Product Preview" class="max-w-full max-h-[280px] sm:max-h-[320px] rounded-lg object-contain mx-auto" />
+                    </div>
+      
+                    <button id="analyze-product-button"
+                            class="w-full px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+                            style="display: none;">
+                        ✨ Analyze Selected Image
+                    </button>
+      
+                    <div id="product-analysis-loader" class="text-center py-10 hidden">
+                         <svg class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p class="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">Peeking...</p>
+                    </div>
+                    <div id="product-analysis-error" class="bg-red-100 dark:bg-red-700/30 border border-red-400 dark:border-red-500/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-xs sm:text-sm hidden mt-4"></div>
+                    <div id="product-analysis-result" class="mt-6 sm:mt-8">
+                    </div>
+                </div>
+            </section>
+        </div>
+
+      </div> <!-- End of lg:col-span-2 -->
+
+      <!-- Right Section (Chatbot area) -->
+      <!-- Desktop Sidebar Chat: Wrapper for positioning -->
+<div id="sticky-chatbot-wrapper"
+     class="hidden lg:block lg:sticky lg:top-32 lg:self-start"
+     style="height: calc(100vh - 20rem);">
+
+          <!-- Chatbot Container IS NOW INSIDE THE WRAPPER -->
+          <div id="chatbot-container" class="glass-card chatbot-container hidden lg:flex lg:flex-col lg:h-full lg:min-h-[520px] lg:max-h-[720px]"> 
+            <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl flex justify-between items-center">
+              <div>
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Ask the Economy Bot!</h3>
+                <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Get simple explanations.</p>
+              </div>
+              <button id="chat-panel-close-button" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 lg:hidden"> 
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+    
+            <div id="chat-messages-container" class="chat-messages custom-scrollbar">
+              <div id="chat-loading-indicator" class="bot-message self-start text-gray-500 dark:text-gray-400 hidden items-center">
+                <svg class="w-5 h-5 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M5 10a2 2 0 110-4 2 2 0 010 4zm10 0a2 2 0 110-4 2 2 0 010 4zm-5 0a2 2 0 110-4 2 2 0 010 4z"/></svg>
+              </div>
+              <div id="chat-error-display" class="bg-red-100 dark:bg-red-700/30 border border-red-400 dark:border-red-500/50 text-red-700 dark:text-red-300 px-3 py-2 rounded-md text-xs sm:text-sm self-start hidden">
+                <strong class="font-bold">Chat Error:</strong>
+                <span id="chat-error-text"></span>
+              </div>
+            </div>
+    
+            <div class="chat-input-area">
+              <input type="text" id="chat-input" placeholder="e.g., What is inflation?" class="flex-grow border border-gray-300 dark:border-gray-600 rounded-full py-2 px-3 sm:px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400">
+              <button id="chat-send-button" class="bg-blue-600 text-white p-2 sm:p-3 rounded-full shadow-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Send">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+      </div> <!-- End of sticky-chatbot-wrapper -->
+      
+      <!-- Mobile Chat Bubble -->
+      <button id="chat-bubble" class="fixed bottom-5 right-5 block lg:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
+      
+    </div>
+  </div>
+
+  <!-- Modal Block (Original Article Summary Modal) -->
+  <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50 p-3 sm:p-4 md:p-8 transition-opacity duration-300 ease-in-out opacity-0">
+    <div id="modalPanel" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-11/12 md:w-full max-w-3xl flex flex-col transform transition-all duration-300 ease-in-out scale-95 opacity-0" style="max-height: 90vh;" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
+        <h2 id="modalTitle" class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">Article Analysis</h2>
+        <button onclick="closeModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1" aria-label="Close modal">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div id="modalBody" class="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow custom-scrollbar">
+          <div id="modalSkeletonLoader" class="space-y-6 animate-pulse">
+              <div> <div class="h-5 sm:h-6 bg-gray-300 dark:bg-gray-600 rounded-md w-1/3 mb-3"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-full mb-2"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-5/6 mb-2"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-full"></div> </div>
+              <div> <div class="h-5 sm:h-6 bg-indigo-200 dark:bg-indigo-700/50 rounded-md w-1/4 mb-3"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-full mb-2"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-4/5"></div> </div>
+              <div> <div class="h-5 sm:h-6 bg-red-200 dark:bg-red-700/50 rounded-md w-2/5 mb-3"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-full mb-2"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-full mb-2"></div> <div class="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4"></div> </div>
+              <div> <div class="h-5 sm:h-6 bg-gray-300 dark:bg-gray-600 rounded-md w-1/5 mb-3"></div> <div class="flex space-x-2"> <div class="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div><div class="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div><div class="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div><div class="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div><div class="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div> </div> </div>
+          </div>
+        <div class="section-block"> <h3 class="text-base sm:text-lg font-semibold mb-2 text-gray-700 dark:text-gray-300">Summary</h3> <p id="modalSummary" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed"></p> </div>
+        <div class="section-block"> <h3 class="text-base sm:text-lg font-semibold mb-2 text-indigo-600 dark:text-indigo-400">Gen Z Translation</h3> <p id="modalGenZ" class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed"></p> </div>
+        <div class="section-block"> <h3 class="text-base sm:text-lg font-semibold mb-2 text-red-600 dark:text-red-400">How This Affects You</h3> <p id="modalImpact" class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed"></p> </div>
+        <div class="section-block" id="modalImpactScaleContainer"> <h3 class="text-base sm:text-lg font-semibold mb-2 text-gray-700 dark:text-gray-300">Impact Scale (1-5)</h3> <div id="modalImpactScale" class="flex space-x-1 sm:space-x-2 items-center"></div> </div>
+      </div>
+      <div class="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-b-2xl">
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+            <button id="save-modal-as-png-button" class="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">Share</button>  
+            <button id="full-article-button" class="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Full Article</button>
+        </div>
+        <button onclick="closeModal()" class="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">Close</button>
+    </div>
+  </div>
+</div> 
+
+<div id="edit-watched-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-11/12 max-w-lg p-4 sm:p-6 md:p-8 transform transition-all duration-300 ease-in-out scale-95 opacity-0">
+      <div class="flex justify-between items-center pb-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700"> <h3 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">Edit Watched Companies</h3> <button id="close-modal-btn" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none p-1 rounded-full"> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> </button> </div>
+      <div class="space-y-4 sm:space-y-6">
+        <div id="current-watched-list-editor" class="max-h-[200px] sm:max-h-[280px] overflow-y-auto custom-scrollbar pr-2 space-y-2 sm:space-y-2.5"> </div>
+        <div class="flex flex-col sm:flex-row items-start gap-2 sm:gap-3"> <input type="text" id="add-company-input" class="flex-grow block w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50/80 dark:bg-gray-700/80 placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100" placeholder="Enter company name to add..."> <button id="add-company-btn" class="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors whitespace-nowrap"> Add Company </button> </div>
+        <div id="add-company-error" class="text-xs text-red-600 dark:text-red-400 h-4"></div>
+      </div>
+      <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700 text-right"> <button id="save-watched-changes-btn" class="px-5 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"> Done </button> </div>
+    </div>
+</div>
+
+<div id="camera-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-11/12 max-w-xl p-4 sm:p-6 md:p-8 transform transition-all duration-300 ease-in-out scale-95 opacity-0">
+      <div class="flex justify-between items-center pb-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700"> <h3 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">Camera View</h3> <button id="close-camera-modal-btn" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none p-1 rounded-full"> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> </button> </div>
+      <div class="flex flex-col items-center"> <video id="camera-video" autoplay playsinline class="w-full max-h-[40vh] sm:max-h-[60vh] rounded-lg bg-gray-900 mb-4 sm:mb-5 border border-gray-300 dark:border-gray-600 object-contain"></video> <div id="camera-error-display" class="w-full bg-red-100 dark:bg-red-700/30 border border-red-400 dark:border-red-500/50 text-red-700 dark:text-red-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm hidden mb-4"></div> </div>
+      <div class="mt-3 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700 text-center"> <button id="capture-photo-btn" class="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"> 📸 Capture & Use Photo </button> </div>
+    </div>
+</div>
+
+  <template id="company-card-template">
+    <div class="company-profile-card flex-shrink-0 
+                w-[calc(100vw-2.5rem)] /* Slightly less subtracted for a bit wider base on mobile */
+                max-w-sm               /* Cap at Tailwind's max-w-sm (24rem / 384px) */
+                sm:w-80               
+                md:w-[350px]          
+                lg:w-[500px]          
+                min-h-[222px]         
+                sm:min-h-[228px]      
+                glass-card-base flex flex-col overflow-hidden dark:text-gray-200">
+        <div class="p-4 flex flex-col gap-3 sm:gap-3.5 flex-grow custom-scrollbar overflow-y-auto"> 
+            <div class="flex items-start gap-3 pb-3 border-b border-gray-200/70 dark:border-gray-700/70">
+                <div class="flex-shrink-0"> <img data-role="logo" src="https://via.placeholder.com/64/e2e8f0/9ca3af?text=L" alt="Company Logo" class="company-logo rounded-md object-contain bg-white border border-gray-200/50 dark:border-gray-600/50 shadow"> <div data-role="logo-placeholder" class="company-logo rounded-md bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 flex items-center justify-center text-xl sm:text-2xl font-bold hidden">L</div> </div>
+                <div class="flex-1 min-w-0"> <h3 data-role="company-name" class="text-base md:text-lg font-semibold text-gray-800 dark:text-gray-100 leading-tight truncate">Company Name</h3> <span data-role="company-ticker" class="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100/80 dark:bg-gray-700/80 px-1.5 py-0.5 rounded-md inline-block uppercase tracking-wide">TICKER</span> </div>
+            </div>
+            <div data-role="recommendation-section" class="recommendation-slider-container"> <div class="recommendation-text text-center font-medium mb-2" data-role="recommendation-text">Loading...</div> <div class="slider-track-wrapper"> <div class="slider-track absolute top-1/2 transform -translate-y-1/2"></div> <div class="slider-thumb absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 left-[50%]" data-role="recommendation-slider-thumb"></div> </div> </div>
+            <div data-role="stock-vitals-section">
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 sm:mb-2">Stock Vitals</h4>
+                <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
+                    <div class="p-1.5 sm:p-2 bg-gray-400/5 dark:bg-gray-700/20 rounded-md"> <strong class="block text-[0.7rem] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5 uppercase">Price</strong> <span data-role="stock-price" class="text-sm font-semibold text-gray-800 dark:text-gray-100">N/A <span data-role="stock-price-arrow" class="text-xs"></span></span> </div>
+                    <div class="p-1.5 sm:p-2 bg-gray-400/5 dark:bg-gray-700/20 rounded-md"> <strong class="block text-[0.7rem] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5 uppercase">Day %</strong> <span data-role="stock-day-change" class="text-sm font-semibold text-gray-700 dark:text-gray-200">N/A</span> </div>
+                    <div class="p-1.5 sm:p-2 bg-gray-400/5 dark:bg-gray-700/20 rounded-md"> <strong class="block text-[0.7rem] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5 uppercase">Month %</strong> <span data-role="stock-month-change" class="text-sm font-semibold text-gray-700 dark:text-gray-200">N/A</span> </div>
+                </div>
+            </div>
+            <div data-role="gemini-insights-container" class="space-y-2 sm:space-y-2.5 pt-1 sm:pt-1.5 text-xs sm:text-sm"> </div>
+        </div>
+        <div data-role="card-footer" class="p-2.5 sm:p-3 border-t border-gray-200/70 dark:border-gray-700/70 mt-auto hidden"> <button data-role="add-to-watchlist-button" class="w-full px-3 py-1.5 sm:py-2 text-[0.7rem] sm:text-xs md:text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"> ➕ Add to Watchlist </button> </div>
+    </div>
+  </template>
+
+</body>
+</html>
